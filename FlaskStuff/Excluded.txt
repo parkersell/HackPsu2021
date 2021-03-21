@@ -34,3 +34,9 @@ october
 november
 december
 announcements
+tab
+up
+fall
+spring
+summer
+winter
