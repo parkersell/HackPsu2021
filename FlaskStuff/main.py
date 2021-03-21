@@ -7,6 +7,8 @@ import pandas as pd
 import string
 import math
 import gdown
+import urllib.parse
+import html
 from textblob import TextBlob
 # from firebase_admin import credentials, initialize_app, storage
 from google_drive_downloader import GoogleDriveDownloader as gdd
@@ -16,22 +18,65 @@ firebase = firebase.FirebaseApplication('https://learned-aria-308200-default-rtd
 
 app = Flask(__name__)
 
-@app.route("/")
+@app.route("/", methods=['GET'])
 def index():
-    # get this using parameters aka ?test1
-    # have a value called recent in firebase and access that is the name
-    # need to know users name to get out of result
-    name1 = "Tej"
-    name2 = "Keshav"
-
-    bhlist1 = getbh(name1)
+    name1 = firebase.get('/link/', '')['name1']
+    print(name1)
+    name2 = "Parker"
+    print(1)
+    bhlist1, ytlist1 = getbh(name1)
+    print(2)
+    bhlist2, ytlist2 = getbh(name2)
+    print(3)
+    print(firebase.get('/userINFO/', '')[name1].get("BHMatches")!=-1)
+    if firebase.get('/userINFO/', '')[name1].get("BHMatches") !=-1: # run it if BHMatches doesnt exist
+        bhmatch = matchfunc(bhlist1, bhlist2)
+        bhmatchlocation1 = 'userINFO/'+name1+'/BHMatches/'+name2+'/'
+        bhmatchlocation2 = 'userINFO/'+name2+'/BHMatches/'+name1+'/'
+        firebase.post(bhmatchlocation1,bhmatch, {'print': 'silent'}, {'X_FANCY_HEADER': 'VERY FANCY'}) #outputs to firebase
+        firebase.post(bhmatchlocation2,bhmatch, {'print': 'silent'}, {'X_FANCY_HEADER': 'VERY FANCY'}) #outputs to firebase
+    print(4)
+    if firebase.get('/userINFO/', '')[name1].get("YTMatches") !=-1: # run it if BHMatches doesnt exist
+        ytmatch = matchfunc(ytlist1, ytlist2)    
+        ytmatchlocation1 = 'userINFO/'+name1+'/YTMatches/'+name2+'/'
+        ytmatchlocation2 = 'userINFO/'+name2+'/YTMatches/'+name1+'/' 
+        firebase.post(ytmatchlocation1,ytmatch, {'print': 'silent'}, {'X_FANCY_HEADER': 'VERY FANCY'}) #outputs to firebase
     
-    # bhlist2 = getbh(name2)
-    # match = matchfunc(bhlist1, bhlist2)
-    topname1 = topN(nounHistogram(bhlist1), 20)
-    matchlocation1 = '/zip/'+name1+'/'
-    result1 = firebase.post(matchlocation1,topname1)
-    return bhlist1
+        firebase.post(ytmatchlocation2,ytmatch, {'print': 'silent'}, {'X_FANCY_HEADER': 'VERY FANCY'}) #outputs to firebase
+    print(5)
+    return "Check App, "+ name1 +" matched with " + name2 + " has loaded! "
+
+def searchHistory(filePath):
+    with open(filePath, encoding="utf8") as file:
+        raw = file.readline()
+        while raw[:8] != "</style>":
+            raw = file.readline()
+        file.close()
+
+    queries = raw.split("query=")
+    matchable = []
+    for query in queries:
+        query = query[:query.index('"')]
+        query = " ".join(query.split("+"))
+        matchable.append(urllib.parse.unquote(query))
+
+    return matchable[1:]
+
+def watchHistory(filePath):
+    with open(filePath, encoding="utf8") as file:
+        raw = file.readline()
+        while raw[:8] != "</style>":
+            raw = file.readline()
+        file.close()
+
+    queries = raw.split("</a>")
+    matchable = []
+    for query in queries:
+        query = query[query.rindex('">') + 2:]
+        matchable.append(html.unescape(query))
+
+    return matchable[:-1]
+
 
 def histogram(l):
 #    """
@@ -122,22 +167,22 @@ def match(hist1, hist2, number):
             matches.append((key, hist1[key], hist2[key]))
 
     matches = sorted(matches, key=lambda x: x[1][0] + x[2][0])[:number]
-    #return [x[0] for x in matches]
-    return matches 
+    return ", ".join([x[0] + " (" + str(x[2][0]) + ")" for x in matches])
+    # return matches 
 def matchfunc(bhlist1, bhlist2):
     sh1 = sortedHistogram(nounHistogram(bhlist1))
     sh2 = sortedHistogram(nounHistogram(bhlist2))
-    return match(sh1, sh2, 20)
+    return match(sh1, sh2, 10)
 
 def getbh(name):
     
-    result = firebase.get('/userINFO/', '')
-    
-    person = result[name]
-    age = str(list(person.keys())[0])
-    phone = str(list(person[age].keys())[0])
-    realfilename = person[age][phone]['filename']
-    print(realfilename)
+    result = firebase.get('/zip/', '')
+    # print(result)
+    # person = 
+    # age = str(list(person.keys())[0])
+    # phone = str(list(person[age].keys())[0])
+    realfilename = result[name]
+    # print(realfilename)
     # Init firebase with your credentials
 
     #### Put your local file path 
@@ -145,18 +190,23 @@ def getbh(name):
     ####blob = bucket.blob(realfilename)
     ####my_blob = Blob.from_string("gs://learned-aria-308200.appspot.com/zip/"+realfilename)
     ####print(my_blob)
+    realfilename = realfilename.replace("\\", "")
+    # print(realfilename)
     dindex = realfilename.index('/d/')+3
     viewindex = realfilename.index('/view')
     driveid = realfilename[dindex: viewindex]
-    print(driveid)
+    # print(driveid)
     gdd.download_file_from_google_drive(file_id=driveid,
-                                    dest_path=''+name+'/Takeout/Chrome/BrowserHistory.json',
+                                    dest_path='/tmp/'+name+'/Takeout/Chrome/BrowserHistory.json',
                                     unzip=True)
-    f = open(name+"/Takeout/Chrome/Takeout/Chrome/BrowserHistory.json", encoding="utf8")
-    hi =json.load(f) #json file
-    dataframe = pd.DataFrame.from_dict(hi["Browser History"])
+    bhf = open('/tmp/'+name+"/Takeout/Chrome/Takeout/Chrome/BrowserHistory.json", encoding="utf8")
+    ytsearch = searchHistory('/tmp/'+name+"/Takeout/Chrome/Takeout/YouTube and YouTube Music/history/search-history.html")
+    ytwatch = watchHistory('/tmp/'+name+"/Takeout/Chrome/Takeout/YouTube and YouTube Music/history/watch-history.html")
+    yttotal = ytsearch + ytwatch
+    bhjson =json.load(bhf) #json file
+    dataframe = pd.DataFrame.from_dict(bhjson["Browser History"])
     bhlist = dataframe["title"].tolist() ## turns into list
-    return bhlist
+    return bhlist, yttotal
 
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=8080, debug=True)
