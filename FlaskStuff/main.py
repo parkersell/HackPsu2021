@@ -28,14 +28,15 @@ def index():
     print(2)
     bhlist2, ytlist2 = getbh(name2)
     print(3)
-    if firebase.get('/userINFO/', '')[name1].get("BHMatches") ==-1: # run it if BHMatches doesnt exist
+    print(firebase.get('/userINFO/', '')[name1].get("BHMatches")!=-1)
+    if firebase.get('/userINFO/', '')[name1].get("BHMatches") !=-1: # run it if BHMatches doesnt exist
         bhmatch = matchfunc(bhlist1, bhlist2)
         bhmatchlocation1 = 'userINFO/'+name1+'/BHMatches/'+name2+'/'
         bhmatchlocation2 = 'userINFO/'+name2+'/BHMatches/'+name1+'/'
         firebase.post(bhmatchlocation1,bhmatch, {'print': 'silent'}, {'X_FANCY_HEADER': 'VERY FANCY'}) #outputs to firebase
         firebase.post(bhmatchlocation2,bhmatch, {'print': 'silent'}, {'X_FANCY_HEADER': 'VERY FANCY'}) #outputs to firebase
     print(4)
-    if firebase.get('/userINFO/', '')[name1].get("YTMatches") ==-1: # run it if BHMatches doesnt exist
+    if firebase.get('/userINFO/', '')[name1].get("YTMatches") !=-1: # run it if BHMatches doesnt exist
         ytmatch = matchfunc(ytlist1, ytlist2)    
         ytmatchlocation1 = 'userINFO/'+name1+'/YTMatches/'+name2+'/'
         ytmatchlocation2 = 'userINFO/'+name2+'/YTMatches/'+name1+'/' 
