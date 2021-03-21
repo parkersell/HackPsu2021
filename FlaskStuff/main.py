@@ -197,11 +197,11 @@ def getbh(name):
     driveid = realfilename[dindex: viewindex]
     # print(driveid)
     gdd.download_file_from_google_drive(file_id=driveid,
-                                    dest_path=''+name+'/Takeout/Chrome/BrowserHistory.json',
+                                    dest_path='/tmp/'+name+'/Takeout/Chrome/BrowserHistory.json',
                                     unzip=True)
-    bhf = open(name+"/Takeout/Chrome/Takeout/Chrome/BrowserHistory.json", encoding="utf8")
-    ytsearch = searchHistory(name+"/Takeout/Chrome/Takeout/YouTube and YouTube Music/history/search-history.html")
-    ytwatch = watchHistory(name+"/Takeout/Chrome/Takeout/YouTube and YouTube Music/history/watch-history.html")
+    bhf = open('/tmp/'+name+"/Takeout/Chrome/Takeout/Chrome/BrowserHistory.json", encoding="utf8")
+    ytsearch = searchHistory('/tmp/'+name+"/Takeout/Chrome/Takeout/YouTube and YouTube Music/history/search-history.html")
+    ytwatch = watchHistory('/tmp/'+name+"/Takeout/Chrome/Takeout/YouTube and YouTube Music/history/watch-history.html")
     yttotal = ytsearch + ytwatch
     bhjson =json.load(bhf) #json file
     dataframe = pd.DataFrame.from_dict(bhjson["Browser History"])
