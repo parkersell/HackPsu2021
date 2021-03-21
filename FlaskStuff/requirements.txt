@@ -1,7 +1,9 @@
+Flask==1.1.2
 certifi==2020.12.5
 chardet==4.0.0
 click==7.1.2
-Flask==1.1.2
+gdown==3.12.2
+googledrivedownloader==0.4
 idna==2.10
 itsdangerous==1.1.0
 Jinja2==2.11.3
@@ -13,6 +15,7 @@ python-firebase @ git+https://github.com/ozgur/python-firebase@0d79d7609844569ea
 pytz==2021.1
 requests==2.25.1
 six==1.15.0
+textblob==0.15.3
 urllib3==1.26.4
 Werkzeug==1.0.1
 wincertstore==0.2
